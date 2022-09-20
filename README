@@ -1,0 +1,84 @@
+Copyright Buzea Alexandru-Mihai-Iulian 311CAb
+Copyright Makefile: Data Structures Team, Buzea Alexandru-Mihai-Iulian
+
+Homework subject: LOAD BALANCER
+
+	The scope of this homework was to implement a data structure that
+is able to store large amounts of data (on multiple servers), minimizing
+the amount of keys that needs to be remapped when a new server is added
+or a server is removed through consistent hashing (you can find out more
+details here: https://ocw.cs.pub.ro/courses/sd-ca/teme/tema2-2021).
+
+1. Implementation of data structure
+
+	In order to implement the data structure, I used a special data structure
+for a server, called server_memory (see server.h for more details), in which I
+stored a hashtable (for the key-value pairs), its id and its hash, determined
+using a special function already given in the skel.
+	The main idea of load balancer was implemented using a linked list, in
+which I stored server_memory ** pointers (in order to use free functions
+properly, without double free errors). My implementation of load balancer
+also contains two pointers to hash functions (one used for adding and
+removing the keys from the load balancer, and one used to add and removed
+servers, according to the principles of consistent hashing idea).
+	It has a huge impact on the execution time and complexity of the source
+code that the hashring (the linked list) has its nodes sorted after server
+hash. To do this, I always added one server to keep the list sorted (based
+on its hash, see load_balancer.c for implementation and more details).
+
+2. Operations that can be performed on the load balancer
+
+	The main operations that can be performed on the load balancer structure
+are (A, B are basic implementations):
+
+	A. Allocation of memory and initializing a load balancer
+	B. Freeing a load balancer (#nomemoryleaks)
+	C. Storing a key-value pair
+
+	The main objective of this function was to identify the server on which
+the pair must be stored in order to satisfy the principles of consistent
+hashing. In order to do this, I searched in the hashring (linked list) for
+the first server with the hash greater than our key's hash, and then I added
+the pair to the corresponding key. If no such server was found, I added the
+pair to the first server in the list - because, on the hashring, the next
+server if we search clockwise is the first server in the list. In this way,
+we can conclude that first server is the only server which has stored on it
+pairs with key hash greater than that of itself (an important fact to notice
+especially when we need to add a new server).
+
+	D. Adding a new server
+
+	In a similar way with that described at C, I searched for the first server
+with the hash greater than the hash of the server I want to add, and then I
+added the server (if no such server exists, I added the server at the end of
+the list). Then, I rebalanced the keys (moved some keys from the server
+situated next to the our new-added server on it) using another function (see
+server.c for more details) based on the fact that there exists just three
+possible situations (described in load_balancer.h).
+
+	E. Removing a server
+
+	In a similar way with that described at D, I searched for the server which
+needs to be removed, and then I moved all the objects (key-value pairs) on the
+server situated next to it.
+
+	F. Retrieving a key
+
+	I searched through the hashring for the server on which the pair can be
+situated, and then I returned the key using retrieve functions (see server.c
+and Hashtable.c for more details).
+
+	Overall, I hope you enjoyed my ideas and my implementation, although I
+know there is place for better (especially in terms of efficiency).
+
+	P.S. I read your recommendations from moodle a bit too late (I already
+planned to make my implementation using a linked list and different
+hashtables for the copies), and I am sorry for that. But I want to fix some
+of the strong points of my implementation:
+	- it is easy to understand
+	- it stores as many servers as there exists (including copies): if I
+would have used an array list, I would have used much more memory for same
+result (e. g. binary search on 300000 elements vs linear search on maximum
+30-50 elements)
+	- it is pretty fast compared to other possible implementations and it
+can be improved in order to be used for real.
